@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoldenSage | My Health Portal</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+
+        :root {
+            --primary: #5A7F61;
+            --accent: #C5A028;
+            --bg-body: #F8FAFC;
+            --sidebar-bg: #FFFFFF;
+            --patient-alt: #E8F0EA;
+            --success: #10B981;
+            --warning: #F59E0B;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0; display: flex; background-color: var(--bg-body);
+            height: 100vh; overflow: hidden; color: #1E293B;
+        }
+
+        /* --- SIDEBAR (Clean & White for Patients) --- */
+        .sidebar { 
+            width: 260px; background: var(--sidebar-bg); padding: 40px 20px; 
+            border-right: 1px solid #E2E8F0; display: flex; flex-direction: column;
+        }
+        .nav-link { 
+            display: flex; align-items: center; gap: 15px; padding: 16px 20px; 
+            text-decoration: none; color: #64748B; border-radius: 16px; 
+            margin-bottom: 10px; cursor: pointer; font-weight: 600; transition: 0.3s;
+        }
+        .nav-link.active { background: var(--patient-alt); color: var(--primary); }
+        .nav-link i { font-size: 1.2rem; }
+
+        
+        
+
+/* --- Master Visibility Control --- */
+.view-content {
+    display: none !important; /* Forces everything to stay hidden */
+    visibility: hidden;
+    height: 0;
+    overflow: hidden;
+}
+
+.view-content.active {
+    display: block !important;
+    visibility: visible;
+    height: auto;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Layout Stability --- */
+.main-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    height: 100vh;
+    padding: 40px;
+    box-sizing: border-box;
+}
+        /* --- PATIENT HERO --- */
+        .welcome-box { 
+            background: linear-gradient(135deg, #5A7F61 0%, #4A6950 100%); 
+            color: white; padding: 40px; border-radius: 35px; margin-bottom: 30px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        /* --- DAILY ACTION CARDS --- */
+        .action-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 25px; }
+        
+        .card { background: white; border-radius: 28px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
+        .card-title { font-size: 1.3rem; font-weight: 800; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+
+        .todo-item { 
+            display: flex; align-items: center; justify-content: space-between; 
+            padding: 18px; border-radius: 20px; background: #F1F5F9; margin-bottom: 12px;
+            border: 1px solid transparent; transition: 0.3s;
+        }
+        .todo-item.done { opacity: 0.6; background: #F8FAFC; text-decoration: line-through; }
+        .todo-item:hover { border-color: var(--primary); transform: scale(1.01); }
+
+        .check-btn { 
+            width: 30px; height: 30px; border-radius: 10px; border: 2px solid var(--primary); 
+            cursor: pointer; display: flex; align-items: center; justify-content: center; color: white;
+        }
+        .check-btn.active { background: var(--primary); }
+
+        /* --- VITALS STRIP --- */
+        .vitals-strip { display: flex; gap: 20px; margin-bottom: 30px; }
+        .mini-vital { 
+            background: white; padding: 20px; border-radius: 20px; flex: 1; 
+            display: flex; align-items: center; gap: 15px; border: 1px solid #E2E8F0;
+        }
+        .icon-circle { 
+            width: 50px; height: 50px; border-radius: 15px; 
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+        }
+
+        /* --- DOCTOR LIST FOR PATIENT --- */
+        .doc-mini-card {
+            display: flex; align-items: center; gap: 15px; padding: 15px;
+            border: 1px solid #F1F5F9; border-radius: 18px; margin-bottom: 10px;
+        }
+         .doc-profile-card {
+            padding: 20px; border: 1px solid #F1F5F9; border-radius: 22px; margin-bottom: 15px;
+            background: #fdfdfd; transition: 0.3s;
+        }
+        .doc-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .doc-avatar { width: 50px; height: 50px; border-radius: 14px; background: #E8F0EA; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.2rem; }
+        .doc-desc { font-size: 0.85rem; color: #64748B; line-height: 1.5; background: #F8FAFC; padding: 10px; border-radius: 12px; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--success); }
+       
+        /* --- MEDICINE & TASK LAYOUT FEATURES --- */
+
+/* Badge Styles for Status */
+.badge-green { 
+    background: #DCFCE7; 
+    color: #16A34A; 
+    padding: 6px 12px; 
+    border-radius: 20px; 
+    font-size: 0.8rem; 
+    font-weight: 700; 
+}
+
+.badge-red { 
+    background: #FFE4E6; 
+    color: #E11D48; 
+    padding: 6px 12px; 
+    border-radius: 20px; 
+    font-size: 0.8rem; 
+    font-weight: 700; 
+}
+
+/* Medicine Card & Task Item Layouts */
+.task-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: #F8FAFC;
+    border-radius: 15px;
+    margin-bottom: 10px;
+    transition: 0.3s;
+}
+
+.task-item.done { 
+    opacity: 0.6; 
+}
+
+.task-item.done .task-text { 
+    text-decoration: line-through; 
+}
+
+.check-btn {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #CBD5E1;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.3s;
+}
+
+.check-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+/* Medicine List Specific Styling */
+.med-card {
+    background: white;
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid #E2E8F0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Timeline layout for medication history */
+.timeline-item {
+    padding: 15px;
+    border-left: 2px solid #E2E8F0;
+    margin-left: 10px;
+    position: relative;
+    cursor: pointer;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -7px;
+    top: 20px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid var(--primary);
+}
+
+/* Medicine Modal/Popup Styles */
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 30px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+}
+
+#modalIconContainer {
+    width: 70px;
+    height: 70px;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 20px;
+}
+
+/* Badge Styles for Status */
+.badge-green { background: #DCFCE7; color: #16A34A; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
+.badge-red { background: #FFE4E6; color: #E11D48; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
+
+/* Medicine Card Specific Styling */
+.med-card {
+    background: white;
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid #E2E8F0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Modal Internal Icon Container */
+#modalIconContainer {
+    width: 70px;
+    height: 70px;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 20px;
+}
+
+
+/* --- --------------------------------PROFILE LAYOUT --- ---------------------------------------*/
+.profile-grid { 
+    display: grid; 
+    grid-template-columns: 320px 1fr; 
+    gap: 30px; 
+    align-items: start;
+}
+
+/* --- INFORMATION STYLING --- */
+.info-label { 
+    color: #64748B; 
+    font-size: 0.8rem; 
+    text-transform: uppercase; 
+    font-weight: 800; 
+    letter-spacing: 0.5px; 
+}
+.info-value { 
+    font-size: 1.1rem; 
+    font-weight: 700; 
+    margin-top: 5px; 
+}
+
+/* --- EMERGENCY CARD & ALERTS --- */
+.emergency-card { 
+    background: #0F172A; 
+    color: white; 
+    border-radius: 24px; 
+    padding: 30px; 
+    display: flex; 
+    align-items: center; 
+    gap: 20px; 
+    margin-top: 30px;
+}
+
+.warning-icon { 
+    width: 60px; 
+    height: 60px; 
+    background: #E11D48; 
+    border-radius: 15px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 1.5rem; 
+    color: white;
+}
+
+.badge-red { background: #FFE4E6; color: #E11D48; padding: 6px 16px; border-radius: 50px; font-weight: 700; font-size: 0.85rem; }
+.badge-green { background: #F0FDF4; color: #16A34A; padding: 6px 16px; border-radius: 50px; font-weight: 700; font-size: 0.85rem; }
+
+/* --- EXPORT MEDICAL ID (PRINT LOGIC) --- */
+@media print {
+    /* Hide the sidebar and other navigation during export */
+    body * { visibility: hidden; }
+    
+    /* Show ONLY the Profile section */
+    #p-profile, #p-profile * { visibility: visible !important; }
+    #p-profile { position: absolute; left: 0; top: 0; width: 100%; }
+
+    /* Force background colors to show in PDF/Print */
+    .emergency-card {
+        background-color: #0F172A !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        color: white !important;
+    }
+    
+    /* Hide buttons in the print version */
+    button { display: none !important; }
+}
+
+/* --- TOP DASHBOARD STYLES --- */
+.top-dashboard {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: #6B7EB0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    border-bottom: 1px solid #E2E8F0;
+    z-index: 1000; /* Keeps it above everything */
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-circle {
+    width: 40px;
+    height: 40px;
+    background: var(--primary);
+    color: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.brand-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.5px;
+}
+
+.header-right .home-ref {
+    text-decoration: none;
+    color: #CCD4E6;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.header-right .home-ref:hover {
+    background: var(--bg-body);
+    color: var(--primary);
+}
+
+/* --- ADJUSTING EXISTING LAYOUT --- */
+/* Push the sidebar and main content down 70px so they don't hide under the header */
+.sidebar {
+    margin-top: 70px;
+    height: calc(100vh - 70px) !important;
+}
+
+.main-wrapper {
+    margin-top: 70px;
+    height: calc(100vh - 70px) !important;
+}
+.help-card {
+    background: var(--patient-alt);
+    padding: 20px;
+    margin: 20px; /* Reduced from a larger margin to move it up */
+    border-radius: 20px;
+    position: relative;
+    bottom: 20px; /* You can adjust this value to pull it higher */
+}
+
+/* OR if your sidebar uses flexbox to push it down */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-footer {
+    margin-top: auto; /* This pushes the button to the bottom */
+    margin-bottom: 40px; /* Increase this to move the button FURTHER UP from the floor */
+}
+    </style> 
+</head>
+<body>
+
+<header class="top-dashboard">
+   
+    <div class="header-left">
+        <div class="logo-circle" style="background: transparent;"> 
+            <img src="../static/assets/images/nl.jpg" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        <span class="brand-name">GoldenSage</span>
+    </div>
+    
+    <div class="header-right">
+        <a href="/main-page" class="home-ref">
+            <i class="fa-solid fa-house"></i>
+            <span> Home</span>
+        </a>
+    </div>
+</header>
+
+    <aside class="sidebar">
+        
+        <div class="nav-link active" onclick="switchTab('p-home', this)"><i class="fa-solid fa-house-user"></i> My Day</div>
+        <div class="nav-link" onclick="switchTab('p-medicine', this)"><i class="fa-solid fa-pills"></i> Medicine</div>
+        <div class="nav-link" onclick="switchTab('p-profile', this)"><i class="fa-solid fa-circle-user"></i> My Profile</div>
+       
+        
+        <div class="nav-link" onclick="window.location.href='/connection'">
+    <i class="fa-solid fa-hubspot"></i> Connections
+</div>
+       <div class="nav-link" onclick="handleLogout()" style="margin-top: 10px; color: #E11D48;"><i class="fa-solid fa-right-from-bracket"></i> Logout</div>
+        <div style="margin-top: auto; padding: 20px; background: #F1F5F9; border-radius: 20px;">
+            <p style="font-size: 0.8rem; margin: 0; color: #64748B;">Need Help?</p>
+            <button style="width: 100%; margin-top: 10px; background: var(--warning); border: none; padding: 10px; border-radius: 10px; color: white; font-weight: 700; cursor: pointer;">SOS Emergency</button>
+        </div>
+    </aside>
+
+    <main class="main-wrapper">
+        
+        <div id="p-home" class="view-content active">
+            <div class="welcome-box">
+                <div>
+                    <h1 style="margin: 0; font-size: 2.5rem;">Good Morning, John</h1>
+                    <p style="opacity: 0.9; font-size: 1.1rem; margin-top: 10px;">You have 3 tasks to complete today. You're doing great!</p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 1.2rem; font-weight: 700;">Dec 27, 2025</div>
+                    <div style="opacity: 0.8;">Sunny • 24°C</div>
+                </div>
+            </div>
+
+            <div class="vitals-strip">
+                <div class="mini-vital">
+                    <div class="icon-circle" style="background: #FFE4E6; color: #E11D48;"><i class="fa-solid fa-heart-pulse"></i></div>
+                    <div><small style="color: #64748B;">Heart Rate</small><br><strong>72 bpm</strong></div>
+                </div>
+                <div class="mini-vital">
+                    <div class="icon-circle" style="background: #E0F2FE; color: #0284C7;"><i class="fa-solid fa-droplet"></i></div>
+                    <div><small style="color: #64748B;">Blood Sugar</small><br><strong>110 mg/dL</strong></div>
+                </div>
+                <div class="mini-vital">
+                    <div class="icon-circle" style="background: #F0FDF4; color: #16A34A;"><i class="fa-solid fa-shoe-prints"></i></div>
+                    <div><small style="color: #64748B;">Steps</small><br><strong>2,450</strong></div>
+                </div>
+            </div>
+
+            <div class="action-grid">
+                <div class="card">
+                    <div class="card-title"><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Today's Schedule</div>
+                    
+                    <div class="todo-item">
+                        <div>
+                            <strong>Morning Medication</strong><br>
+                            <small style="color: #64748B;">Lisinopril • 10mg after breakfast</small>
+                        </div>
+                        <div class="check-btn" onclick="toggleTask(this)"><i class="fa-solid fa-check"></i></div>
+                    </div>
+
+                    <div class="todo-item">
+                        <div>
+                            <strong>Physiotherapy Walk</strong><br>
+                            <small style="color: #64748B;">15 mins light walking in the garden</small>
+                        </div>
+                        <div class="check-btn" onclick="toggleTask(this)"><i class="fa-solid fa-check"></i></div>
+                    </div>
+                     <div class="todo-item">
+                            <div><strong>Morning Meds</strong><br><small>Lisinopril (10mg) • After breakfast</small></div>
+                            <div class="check-btn" onclick="toggleTask(this)"><i class="fa-solid fa-check"></i></div>
+                        </div>
+                        <div class="todo-item">
+                            <div><strong>Hydration Goal</strong><br><small>Drink 2 glasses of water</small></div>
+                            <div class="check-btn" onclick="toggleTask(this)"><i class="fa-solid fa-check"></i></div>
+                        </div>
+                        <div class="todo-item">
+                            <div><strong>Mobility Exercise</strong><br><small>10 min leg stretches with Dr. Sterling</small></div>
+                            <div class="check-btn" onclick="toggleTask(this)"><i class="fa-solid fa-check"></i></div>
+                        </div>
+                        <div class="todo-item">
+                            <div><strong>Blood Pressure Check</strong><br><small>Log reading before lunch</small></div>
+                            <div class="check-btn" onclick="toggleTask(this)"><i class="fa-solid fa-check"></i></div>
+                        </div>
+                        <div class="todo-item">
+                            <div><strong>Afternoon Vitamin</strong><br><small>Vitamin D3 • During lunch</small></div>
+                            <div class="check-btn" onclick="toggleTask(this)"><i class="fa-solid fa-check"></i></div>
+                        </div>
+                        <div class="todo-item">
+                            <div><strong>Evening Walk</strong><br><small>15 mins light garden stroll</small></div>
+                            <div class="check-btn" onclick="toggleTask(this)"><i class="fa-solid fa-check"></i></div>
+                        </div>
+                    <div class="todo-item">
+                        <div>
+                            <strong>Afternoon Nap</strong><br>
+                            <small style="color: #64748B;">Mandatory 30 mins rest period</small>
+                        </div>
+                        <div class="check-btn" onclick="toggleTask(this)"><i class="fa-solid fa-check"></i></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title"><i class="fa-solid fa-user-shield" style="color: var(--accent);"></i> My Care Team</div>
+                    
+                    <div class="doc-profile-card">
+                        <div class="doc-header">
+                            <div class="doc-avatar"><i class="fa-solid fa-heart-pulse"></i></div>
+                            <div><strong>Dr. Sarah Chen</strong><br><small style="color:var(--success)">Cardiologist</small></div>
+                        </div>
+                        <div class="doc-desc">
+                            Specializes in geriatric heart health. She manages your hypertension and monitors your daily heart rate logs.
+                        </div>
+                    </div>
+
+                    <div class="doc-profile-card">
+                        <div class="doc-header">
+                            <div class="doc-avatar"><i class="fa-solid fa-person-walking"></i></div>
+                            <div><strong>Dr. Elizabeth Sterling</strong><br><small style="color:var(--primary)">Physiotherapist</small></div>
+                        </div>
+                        <div class="doc-desc">
+                            Focuses on your balance and mobility. She assigned your 10-minute morning stretching routine.
+                        </div>
+                    </div>
+
+                    <div class="doc-profile-card">
+                        <div class="doc-header">
+                            <div class="doc-avatar"><i class="fa-solid fa-apple-whole"></i></div>
+                            <div><strong>Dr. Jonathan Hyde</strong><br><small style="color:#6366f1">Nutritionist</small></div>
+                        </div>
+                        <div class="doc-desc">
+                            In charge of your low-sodium diet plan and ensures your vitamin levels are optimal for energy.
+                        </div>
+                    </div>
+                </div>
+             </div>
+         </div>
+
+
+        <div id="p-medicine" class="view-content">
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                <span style="color: var(--primary); font-weight: 800; text-transform: uppercase; font-size: 0.8rem;">My Cabinet</span>
+                <span style="background: #DCFCE7; color: #16A34A; padding: 4px 12px; border-radius: 50px; font-size: 0.7rem; font-weight: 800; border: 1px solid #BBF7D0;">
+                    <i class="fa-solid fa-check-circle"></i> 3 MEDICINES IN STOCK
+                </span>
+            </div>
+            <h2 style="margin: 0; font-size: 2.2rem; font-weight: 800;">Digital Pharmacy</h2>
+        </div>
+        <button style="background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 14px; font-weight: 700; cursor: pointer;">
+            <i class="fa-solid fa-truck-medical"></i> Request All Refills
+        </button>
+    </div>
+
+    <div class="card" style="margin-bottom: 30px; background: #f8fafc; border: 1px dashed #cbd5e1;">
+        <div class="card-title"><i class="fa-solid fa-clock" style="color: var(--primary);"></i> Intake Timeline</div>
+        <div style="display: flex; flex-direction: row; gap: 15px; overflow-x: auto; padding-bottom: 10px;">
+            
+            <div onclick="checkTimelineStatus('Lisinopril', '8:00 AM', true)" style="flex: 1; min-width: 220px; background: white; padding: 20px; border-radius: 20px; border-left: 5px solid #F59E0B; cursor: pointer; transition: 0.3s; border-top: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
+                <span style="font-weight: 800; color: #F59E0B; font-size: 0.75rem;">MORNING (8:00 AM)</span>
+                <p style="margin: 10px 0; font-weight: 700; font-size: 1.1rem;">Lisinopril</p>
+                <span style="font-size: 0.8rem; color: #16A34A; font-weight: 600;"><i class="fa-solid fa-check"></i> Taken with breakfast</span>
+            </div>
+
+            <div onclick="checkTimelineStatus('Vitamin D3', '1:00 PM', false)" style="flex: 1; min-width: 220px; background: white; padding: 20px; border-radius: 20px; border-left: 5px solid #10B981; cursor: pointer; transition: 0.3s; border-top: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
+                <span style="font-weight: 800; color: #10B981; font-size: 0.75rem;">NOON (1:00 PM)</span>
+                <p style="margin: 10px 0; font-weight: 700; font-size: 1.1rem;">Vitamin D3</p>
+                <span style="font-size: 0.8rem; color: #E11D48; font-weight: 600;"><i class="fa-solid fa-bell"></i> Reminder sent</span>
+            </div>
+
+            <div onclick="checkTimelineStatus('Atorvastatin', '9:00 PM', false)" style="flex: 1; min-width: 220px; background: white; padding: 20px; border-radius: 20px; border-left: 5px solid #6366F1; cursor: pointer; transition: 0.3s; border-top: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
+                <span style="font-weight: 800; color: #6366F1; font-size: 0.75rem;">NIGHT (9:00 PM)</span>
+                <p style="margin: 10px 0; font-weight: 700; font-size: 1.1rem;">Atorvastatin</p>
+                <span style="font-size: 0.8rem; color: #64748B;">Cholesterol control</span>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px;">
+        
+        <div class="card" style="position: relative; overflow: hidden; border: 1px solid #E2E8F0; padding-top: 50px;">
+            <div style="position: absolute; top: 12px; left: 20px;">
+                <span style="background: #F1F5F9; color: var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; border: 1px solid #E2E8F0; text-transform: uppercase;">
+                    <i class="fa-solid fa-box-archive"></i> Medicines in stock
+                </span>
+            </div>
+            <div style="position: absolute; top: 0; right: 0; background: #DCFCE7; color: #16A34A; padding: 5px 15px; font-size: 0.7rem; font-weight: 800; border-radius: 0 0 0 15px;">SAFE TO MIX</div>
+            
+            <div style="display: flex; gap: 15px; align-items: flex-start; margin-bottom: 20px;">
+                <div style="width: 50px; height: 50px; background: #E8F0EA; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.2rem;">
+                    <i class="fa-solid fa-capsules"></i>
+                </div>
+                <div>
+                    <h3 style="margin: 0;">Lisinopril</h3>
+                    <small style="color: #64748B;">Blood Pressure Control</small>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px;">
+                    <span>Inventory (12/30 Pills)</span>
+                    <span style="color: var(--warning); font-weight: 700;">Low Stock</span>
+                </div>
+                <div style="width: 100%; height: 8px; background: #F1F5F9; border-radius: 10px;">
+                    <div style="width: 40%; height: 100%; background: var(--warning); border-radius: 10px;"></div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button onclick="showInstructions('Lisinopril', 'Take one tablet in the morning. Best taken at the same time each day.')" style="flex: 1; background: #F1F5F9; border: none; padding: 10px; border-radius: 10px; font-weight: 600; cursor: pointer;">Instructions</button>
+               <button onclick="requestRefill('{{ patient.id }}', 'Lisinopril')">
+    Refill Now
+</button>
+            </div>
+        </div>
+
+        <div class="card" style="position: relative; overflow: hidden; border: 1px solid #E2E8F0; padding-top: 50px;">
+            <div style="position: absolute; top: 12px; left: 20px;">
+                <span style="background: #F1F5F9; color: var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; border: 1px solid #E2E8F0; text-transform: uppercase;">
+                    <i class="fa-solid fa-box-archive"></i> Medicines in stock
+                </span>
+            </div>
+            <div style="position: absolute; top: 0; right: 0; background: #E0F2FE; color: #0369A1; padding: 5px 15px; font-size: 0.7rem; font-weight: 800; border-radius: 0 0 0 15px;">DAILY VITAMIN</div>
+            
+            <div style="display: flex; gap: 15px; align-items: flex-start; margin-bottom: 20px;">
+                <div style="width: 50px; height: 50px; background: #F1F5F9; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #0369A1; font-size: 1.2rem;">
+                    <i class="fa-solid fa-pills"></i>
+                </div>
+                <div>
+                    <h3 style="margin: 0;">Vitamin D3</h3>
+                    <small style="color: #64748B;">Bone & Immune Support</small>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px;">
+                    <span>Inventory (28/30 Pills)</span>
+                    <span style="color: var(--success); font-weight: 700;">Good</span>
+                </div>
+                <div style="width: 100%; height: 8px; background: #F1F5F9; border-radius: 10px;">
+                    <div style="width: 90%; height: 100%; background: var(--success); border-radius: 10px;"></div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button onclick="showInstructions('Vitamin D3', 'Take one capsule with lunch. Avoid taking it at night to prevent sleep interference.')" style="flex: 1; background: #F1F5F9; border: none; padding: 10px; border-radius: 10px; font-weight: 600; cursor: pointer;">Instructions</button>
+                <button style="flex: 1; background: #eee; border: none; color: #94A3B8; padding: 10px; border-radius: 10px; font-weight: 700; cursor: not-allowed;">Refill Early</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="medicineDetailsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(4px);">
+    <div style="background: white; width: 90%; max-width: 450px; border-radius: 24px; padding: 30px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: center;">
+        <button onclick="closeCustomModal()" style="position: absolute; top: 20px; right: 20px; background: #f1f5f9; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; color: #64748b;">&times;</button>
+        
+        <div id="modalIconContainer" style="width: 70px; height: 70px; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 2rem;"></div>
+        
+        <h2 id="modalTitle" style="margin: 0 0 10px 0; font-size: 1.5rem; color: #1e293b; font-weight: 800;"></h2>
+        <p id="modalDescription" style="margin: 0 0 25px 0; color: #64748b; line-height: 1.6; font-size: 1rem;"></p>
+        
+        <button onclick="closeCustomModal()" style="width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 1rem; transition: 0.2s;">
+            I Understand
+        </button>
+    </div>
+</div>
+
+
+
+
+
+<div id="p-profile" class="view-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <div>
+            <span style="color: var(--primary); font-weight: 800; text-transform: uppercase; font-size: 0.8rem;">Identity & Medical Background</span>
+            <h2 style="margin: 5px 0 0 0; font-size: 2.2rem; font-weight: 800;">Patient Profile</h2>
+        </div>
+        <button onclick="exportMedicalID()" style="background: white; border: 1px solid #E2E8F0; padding: 12px 24px; border-radius: 12px; font-weight: 700; cursor: pointer;">
+    <i class="fa-solid fa-file-export"></i> Export Medical ID
+</button>
+    </div>
+
+    <div class="profile-grid">
+        <div class="card" style="text-align: center;">
+            <div style="width: 120px; height: 120px; background: #F1F5F9; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 3rem; color: #94A3B8; border: 4px solid white; box-shadow: 0 10px 20px rgba(0,0,0,0.05);">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <h2 style="margin: 0;">John Willoughby</h2>
+            <p style="color: #64748B; font-weight: 600;">Patient ID: #GS-88210</p>
+            
+            <hr style="border: 0; border-top: 1px solid #F1F5F9; margin: 25px 0;">
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;">
+                <div>
+                    <div class="info-label">Age</div>
+                    <div class="info-value">72 Years</div>
+                </div>
+                <div>
+                    <div class="info-label">Blood Type</div>
+                    <div class="info-value" style="color: #E11D48;">O+ Positive</div>
+                </div>
+                <div>
+                    <div class="info-label">Height</div>
+                    <div class="info-value">178cm</div>
+                </div>
+                <div>
+                    <div class="info-label">Weight</div>
+                    <div class="info-value">82kg</div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="card" style="margin-bottom: 25px;">
+                <div class="card-title" style="font-size: 1rem;"><i class="fa-solid fa-clipboard-list" style="color: var(--primary);"></i> Medical Conditions</div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <span class="badge-red">Hypertension</span>
+                    <span class="badge-red">Type 2 Diabetes</span>
+                    <span class="badge-green">Stable Osteoarthritis</span>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+                <div class="card">
+                    <div class="info-label">Primary Caregiver</div>
+                    <div class="info-value" style="margin-bottom: 5px;">Sarah Willoughby (Daughter)</div>
+                    <div style="color: var(--primary); font-weight: 700;"><i class="fa-solid fa-phone"></i> +1 (555) 0123-456</div>
+                </div>
+                <div class="card">
+                    <div class="info-label">Preferred Hospital</div>
+                    <div class="info-value" style="margin-bottom: 5px;">Saint Jude Medical Center</div>
+                    <div style="color: #64748B; font-size: 0.9rem;"><i class="fa-solid fa-location-dot"></i> Emergency Wing B</div>
+                </div>
+            </div>
+             <div class="card" style="margin-bottom: 25px;">
+    <div class="card-title" style="font-size: 1rem;"><i class="fa-solid fa-file-medical" style="color: var(--primary);"></i> Recent Clinical Reports</div>
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left;">
+        <thead>
+            <tr style="border-bottom: 2px solid #F1F5F9; color: #64748B;">
+                <th style="padding: 10px 5px;">Test Type</th>
+                <th style="padding: 10px 5px;">Result</th>
+                <th style="padding: 10px 5px;">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr style="border-bottom: 1px solid #F1F5F9;">
+                <td style="padding: 12px 5px;">HbA1c (Diabetes)</td>
+                <td style="padding: 12px 5px;"><strong>6.4%</strong></td>
+                <td style="padding: 12px 5px;"><span class="badge-green" style="padding: 2px 8px; font-size: 0.7rem;">OPTIMAL</span></td>
+            </tr>
+            <tr style="border-bottom: 1px solid #F1F5F9;">
+                <td style="padding: 12px 5px;">LDL Cholesterol</td>
+                <td style="padding: 12px 5px;"><strong>98 mg/dL</strong></td>
+                <td style="padding: 12px 5px;"><span class="badge-green" style="padding: 2px 8px; font-size: 0.7rem;">STABLE</span></td>
+            </tr>
+            <tr style="border-bottom: 1px solid #F1F5F9;">
+                <td style="padding: 12px 5px;">Kidney Function (eGFR)</td>
+                <td style="padding: 12px 5px;"><strong>72 mL/min</strong></td>
+                <td style="padding: 12px 5px;"><span class="badge-red" style="padding: 2px 8px; font-size: 0.7rem; background:#FEF3C7; color:#92400E;">MONITOR</span></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card" style="margin-bottom: 25px;">
+    <div class="card-title" style="font-size: 1rem;"><i class="fa-solid fa-pills" style="color: var(--primary);"></i> Active Medication List</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div style="background: #F8FAFC; padding: 12px; border-radius: 12px; border-left: 4px solid var(--primary);">
+            <strong>Lisinopril</strong><br>
+            <small>10mg • Daily (Morning)</small>
+        </div>
+        <div style="background: #F8FAFC; padding: 12px; border-radius: 12px; border-left: 4px solid var(--primary);">
+            <strong>Metformin</strong><br>
+            <small>500mg • Twice Daily</small>
+        </div>
+        <div style="background: #F8FAFC; padding: 12px; border-radius: 12px; border-left: 4px solid var(--primary);">
+            <strong>Atorvastatin</strong><br>
+            <small>20mg • Nightly</small>
+        </div>
+        <div style="background: #F8FAFC; padding: 12px; border-radius: 12px; border-left: 4px solid #94A3B8;">
+            <strong>Vitamin D3</strong><br>
+            <small>2000 IU • Daily</small>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 25px;">
+    <div class="card-title" style="font-size: 1rem;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i> Significant Medical History</div>
+    <div style="border-left: 2px solid #E2E8F0; margin-left: 10px; padding-left: 20px; font-size: 0.9rem;">
+        <p><strong>June 2024:</strong> Knee Replacement Surgery (Left) - Successful Recovery.</p>
+        <p><strong>Nov 2023:</strong> Diagnosed with Type 2 Diabetes; managed via Metformin.</p>
+    </div>
+</div>
+
+<div class="emergency-card">
+    <div class="warning-icon">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+    </div>
+    <div>
+        <h3 style="margin: 0; color: #FDA4AF; font-size: 1.2rem;">Critical Allergy Warning</h3>
+        <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 0.95rem; line-height: 1.4;">
+            Severely allergic to <strong>Penicillin</strong> and <strong>Shellfish</strong>. 
+            Avoid contact in all medical procedures and dietary offerings.
+        </p>
+    </div>
+</div>
+
+<div style="margin-top: 20px; text-align: center; color: #94A3B8; font-size: 0.75rem; font-weight: 600;">
+    <i class="fa-solid fa-shield-halved"></i> Verified Medical Record • Last Updated: Dec 28, 2025
+</div>
+</div>
+
+</div>
+
+
+    </main>
+
+    <script>
+  
+function toggleTask(btn) {
+    btn.classList.toggle('active');
+    const item = btn.parentElement;
+    item.classList.toggle('done');
+}
+
+function showInstructions(name, text) {
+    const modal = document.getElementById('medicineDetailsModal');
+    const iconContainer = document.getElementById('modalIconContainer');
+    document.getElementById('modalTitle').innerText = name + " Instructions";
+    document.getElementById('modalDescription').innerText = text;
+    iconContainer.style.background = '#E8F0EA';
+    iconContainer.style.color = 'var(--primary)';
+    iconContainer.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+    modal.style.display = 'flex';
+}
+
+function requestRefill(name) {
+    const modal = document.getElementById('medicineDetailsModal');
+    const iconContainer = document.getElementById('modalIconContainer');
+    document.getElementById('modalTitle').innerText = "Refill Requested";
+    document.getElementById('modalDescription').innerText = "Your request for a " + name + " refill has been sent to your guardian.";
+    iconContainer.style.background = '#DCFCE7';
+    iconContainer.style.color = '#16A34A';
+    iconContainer.innerHTML = '<i class="fa-solid fa-truck-medical"></i>';
+    modal.style.display = 'flex';
+}
+
+function closeCustomModal() {
+    document.getElementById('medicineDetailsModal').style.display = 'none';
+}
+function exportMedicalID() {
+    // Hide everything else for a clean print
+    window.print();
+}
+
+// Function for 'Instructions' button
+function showInstructions(name, text) {
+    const modal = document.getElementById('medicineDetailsModal');
+    const iconContainer = document.getElementById('modalIconContainer');
+    
+    document.getElementById('modalTitle').innerText = name + " Instructions";
+    document.getElementById('modalDescription').innerText = text;
+    
+    // Set a blue/green theme for information
+    iconContainer.style.background = '#E8F0EA';
+    iconContainer.style.color = 'var(--primary)';
+    iconContainer.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+    
+    modal.style.display = 'flex';
+}
+/* =============================================medicine==================================*/
+// Function for 'Refill Now' button
+function requestRefill(name) {
+    const modal = document.getElementById('medicineDetailsModal');
+    const iconContainer = document.getElementById('modalIconContainer');
+    
+    document.getElementById('modalTitle').innerText = "Refill Requested";
+    document.getElementById('modalDescription').innerText = "Your request for a " + name + " refill has been sent to your guardian.";
+    
+    // Set a success theme for refill
+    iconContainer.style.background = '#DCFCE7';
+    iconContainer.style.color = '#16A34A';
+    iconContainer.innerHTML = '<i class="fa-solid fa-truck-medical"></i>';
+    
+    modal.style.display = 'flex';
+}
+
+// Function to close the popup
+function closeCustomModal() {
+    document.getElementById('medicineDetailsModal').style.display = 'none';
+}
+
+/**
+ * Triggers the browser's print dialog.
+ * The CSS in your file is configured to hide everything EXCEPT the 
+ * profile section (#p-profile) when this is called.
+ */
+function exportMedicalID() {
+    // Ensure the profile tab is active before printing
+    switchTab('p-profile', document.querySelector('[onclick*="p-profile"]'));
+    
+    // Trigger the print system
+    window.print();
+}
+
+
+/*========================== logout+unityhub ===========================*/
+
+
+// Function to handle Logout
+function handleLogout() {
+    if (confirm("Are you sure you want to log out of GoldenSage?")) {
+        // You can add session clearing logic here (localStorage.clear(), etc.)
+        alert("Logging out...");
+        // Redirect to the main landing page
+        window.location.href = "Main-page.html";
+    }
+}
+
+// Ensure the switchTab logic handles the new preference view
+function switchTab(id, el) {
+    const target = document.getElementById(id);
+    if (!target) return;
+
+    // 1. Hide every section first
+    document.querySelectorAll('.view-content').forEach(v => {
+        v.classList.remove('active');
+    });
+    
+    // 2. Remove 'active' highlight from all sidebar links
+    document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+
+    // 3. Show the requested section
+    target.classList.add('active');
+    
+    // 4. Highlight the sidebar link
+    if(el) el.classList.add('active');
+}
+function requestRefill(patientId, medicineName) {
+    fetch(`/trigger-refill/${patientId}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `medicine_name=${medicineName}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Show the popup seen in your screenshot
+        document.getElementById('refill-modal').style.display = 'block';
+    });
+}
+    </script>
+
+<div id="refill-modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.6); align-items:center; justify-content:center;">
+    <div style="background:white; padding:40px; border-radius:20px; text-align:center; max-width:450px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+        <div style="background:#e8f5e9; width:70px; height:70px; border-radius:15px; display:flex; align-items:center; justify-content:center; margin: 0 auto 20px;">
+            <img src="/static/assets/logos/refill-icon.png" width="40" alt="Refill Icon">
+        </div>
+        
+        <h2 style="color:#333; margin-bottom:10px;">Refill Requested</h2>
+        <p style="color:#666; margin-bottom:25px;">Your request for a Lisinopril refill has been sent to your guardian.</p>
+        
+        <button onclick="closeModal()" style="background:#5b7c5b; color:white; border:none; padding:15px; border-radius:10px; cursor:pointer; width:100%; font-weight:bold; font-size:16px;">
+            I Understand
+        </button>
+    </div>
+</div>
+</body>
+</html>
