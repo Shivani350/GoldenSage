@@ -22,7 +22,7 @@
         rgba(10, 14, 20, 0.45),
         rgba(10, 14, 20, 0.55)
     ),
-                url('background-uc.png');
+                url('../static/assets/images/background-uc.png');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -139,7 +139,7 @@
                 <div id="loginInputs" class="flex flex-col gap-4 mt-12">
                     <input type="text" placeholder="Enter your email" class="input-field">
                     <input type="password" placeholder="Enter your password" class="input-field">
-                    <button onclick="alert('Welcome!')" class="bg-blue-600 py-3 rounded-lg font-bold mt-4 shadow-lg shadow-blue-900/40">Enter UnityHub</button>
+                    <a href="connection.html" onclick="alert('Welcome!')" class="bg-blue-600 py-3 rounded-lg font-bold mt-4 shadow-lg shadow-blue-900/40 text-center block">Enter UnityHub</a>
                 </div>
 
                 <div id="signupInputs" class="hidden flex flex-col gap-4">
@@ -163,7 +163,8 @@
                     <input type="email" placeholder="Email@example.com" class="input-field">
                     <input type="password" placeholder="Create Password" class="input-field">
                     
-                    <button onclick="alert('Account Created!')" class="bg-blue-600 py-3 rounded-lg font-bold mt-2 shadow-lg shadow-blue-900/40">Create Account</button>
+                    <a href="connection.html" onclick="alert('Account Created!')" class="bg-blue-600 py-3 rounded-lg font-bold mt-2 shadow-lg shadow-blue-900/40 text-center block">Create Account</a>
+                     
                 </div>
             </div>
 
@@ -197,7 +198,4 @@
         }
     </script>
 </body>
-
 </html>
-
-
